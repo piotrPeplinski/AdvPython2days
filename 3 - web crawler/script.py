@@ -1,27 +1,27 @@
-from time import sleep
-from selenium.webdriver.common.by import By
-from connect_manager import ConnectToSite
+import requests
+from bs4 import BeautifulSoup
 
-url = 'https://practicetestautomation.com/practice-test-login/'
+url = 'https://books.toscrape.com/catalogue/category/books_1/index.html'
 
-# driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+r = requests.get(url)
+soup = BeautifulSoup(r.text, 'html.parser')
 
-# driver.get(url)
-with ConnectToSite(url) as driver:
-    all_text = driver.find_element(By.XPATH,'//*[@id="login"]/ul/li[2]')
-    splitted_text = all_text.text.split(' ')
+base_url = 'https://books.toscrape.com/catalogue/'
 
-    password = splitted_text[-1]
-    username = splitted_text[-2].split('\n')[0]
+article = soup.find('article', class_='product_pod')
+link = article.find('a').get_attribute_list('href')[0][6:]
 
-    username_input = driver.find_element(By.NAME, 'username')
-    username_input.send_keys(username)
+book_url = base_url + link
 
-    password_input = driver.find_element(By.NAME, 'password')
-    password_input.send_keys(password)
+r = requests.get(book_url)
+book_soup = BeautifulSoup(r.text, 'html.parser')
 
-    submit_btn = driver.find_element(By.CLASS_NAME,'btn')
-    submit_btn.click()
-    #driver.execute_script("arguments[0].click();", submit_btn)
+ratings_enum = {'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5}
 
-    sleep(5)
+title = book_soup.find('h1').text
+price = book_soup.find('p', class_='price_color').text[2:]
+stock = book_soup.find('p', class_='instock').text.split('(')[1].split(' ')[0]
+rating_key = book_soup.find(
+    'p', class_='star-rating').get_attribute_list('class')[1]
+rating = ratings_enum[rating_key]
+
